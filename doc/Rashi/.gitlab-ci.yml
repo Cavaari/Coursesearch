@@ -1,0 +1,31 @@
+
+# image: php:latest
+
+run tests:
+    image: CI_REGISTRY_IMAGE
+    rules:
+        - if: $CI_PIPELINE_SOURCE != "schedule"
+    script:
+        - php --version
+        - echo "Running the tests"
+
+
+build image:
+    image: docker
+    services:
+        - docker:dind
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+    script:
+        - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+        - docker-compose up -d
+        - docker build -t $CI_REGISTRY_IMAGE .
+        - docker push $CI_REGISTRY_IMAGE
+
+variables:
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_REF_SLUG
+
+# deploy:
+#   stage: deploy
+#   script: echo "Define your deployment script!"
+#   environment: production
